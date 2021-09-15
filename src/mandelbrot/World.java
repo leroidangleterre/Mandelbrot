@@ -66,20 +66,14 @@ class World {
         double yMin = (h - y0) / zoom;
         double yMax = (h - h - y0) / zoom;
 
-        // Paint all the dots
-        for (int i = 0; i < nbPoints; i++) {
-
-            // Coordinates of the tested point
-            double dx = xMax - xMin;
-            double dy = yMax - yMin;
-            double x = (xMax + xMin) / 2 + dx * (new Random().nextDouble() - .5);
-            double y = (yMax + yMin) / 2 + dy * (new Random().nextDouble() - .5);
-
-            int xApp = (int) (x0 + x * zoom);
-            int yApp = (int) (h - (y0 + y * zoom));
-            g.setColor(getColor(x, y));
-            int radius = 5;
-            g.fillOval(xApp - radius, yApp - radius, 2 * radius, 2 * radius);
+        // Paint each pixel
+        for (int col = 0; col < w; col++) {
+            for (int line = 0; line < h; line++) {
+                double xReal = (col - x0) / zoom;
+                double yReal = (h - line - y0) / zoom;
+                g.setColor(getColor(xReal, yReal));
+                g.drawRect(col, line, 1, 1);
+            }
         }
     }
 

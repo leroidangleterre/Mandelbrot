@@ -22,8 +22,6 @@ public class Mandelbrot {
         window.setLayout(new BorderLayout());
         window.add(panel, BorderLayout.CENTER);
 
-        window.add(new MandelbrotMenu(panel), BorderLayout.NORTH);
-
         window.setVisible(true);
     }
 
