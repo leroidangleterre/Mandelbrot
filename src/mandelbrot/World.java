@@ -3,6 +3,8 @@ package mandelbrot;
 import java.awt.Color;
 import java.awt.Graphics;
 
+import colorramp.ColorRamp;
+
 /**
  *
  * @author arthu
@@ -20,8 +22,22 @@ class World {
     private int chunkResolution;
     private int chunkHeight; // 0 if not set, or the actual nb of pixel lines of one chunk;
 
+    private ColorRamp ramp;
+    int maxSteps;
+
     public World() {
         currentStep = 0;
+
+        ramp = new ColorRamp();
+        ramp.addValue(20, Color.blue.darker());
+        ramp.addValue(30, Color.white);
+        ramp.addValue(50, Color.yellow);
+        ramp.addValue(200, Color.red);
+        ramp.addValue(400, Color.blue);
+        ramp.addValue(800, Color.white);
+        ramp.addValue(1300, Color.red);
+        ramp.addValue(1900, Color.black);
+        maxSteps = 1900;
     }
 
     public void paint(Graphics g, double x0, double y0, double zoom) {
@@ -178,23 +194,22 @@ class World {
     private Color getColor(double x, double y) {
 
         // Limit of convergence; if value goes higher, we consider it does not converge
-        double max = 100000;
+        double max = 10000000;
 
         double xCurrent = 0;
         double yCurrent = 0;
         double xNext;
         double yNext;
 
-        for (int i = 0; i < 50; i++) {
+        int i = 0;
+        while (i < maxSteps && xCurrent * xCurrent + yCurrent * yCurrent < max * max) {
             xNext = xCurrent * xCurrent - yCurrent * yCurrent + x;
             yNext = 2 * xCurrent * yCurrent + y;
             xCurrent = xNext;
             yCurrent = yNext;
+            i++;
         }
-        if (xCurrent * xCurrent + yCurrent * yCurrent < max) {
-            return Color.red;
-        } else {
-            return Color.black;
-        }
+        return ramp.getValue(i);
     }
+
 }
