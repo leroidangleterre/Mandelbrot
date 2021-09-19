@@ -2,6 +2,8 @@ package mandelbrot;
 
 import java.awt.Color;
 import java.awt.Graphics;
+import java.awt.event.ComponentEvent;
+import java.awt.event.ComponentListener;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.awt.event.MouseMotionListener;
@@ -15,7 +17,7 @@ import javax.swing.JPanel;
  *
  * @author arthu
  */
-public class GraphicPanel extends JPanel implements MouseListener, MouseMotionListener, MouseWheelListener {
+public class GraphicPanel extends JPanel implements MouseListener, MouseMotionListener, MouseWheelListener, ComponentListener {
 
     private World world;
 
@@ -24,32 +26,61 @@ public class GraphicPanel extends JPanel implements MouseListener, MouseMotionLi
 
     private boolean isPanning;
 
-    private Timer timer;
-    private int delay, period; // milliseconds
+    private int delay, paintingPeriod; // milliseconds
+
+    private boolean paintFromBeginning;
+    private Timer paintingTimer;
+
+    // When painting in square regions, this is how many layers deep we go.
+    private int nbLevels;
 
     public GraphicPanel(World newWorld) {
         super();
         world = newWorld;
-        x0 = 550.5;
-        y0 = 363.7;
+        x0 = 501;
+        y0 = 444;
         zoom = 27.00;
         this.addMouseListener(this);
         this.addMouseMotionListener(this);
         this.addMouseWheelListener(this);
         this.addKeyListener(new MandelKeyListener(this));
+        this.addComponentListener(this);
 
         isPanning = false;
 
-        timer = null;
         delay = 0;
-        period = 5;
+        paintingPeriod = 100;
+
+        nbLevels = 1;
+
+        paintingTimer = new Timer();
+        restartTimer();
+
+        paintFromBeginning = true;
+        world.resetStep();
+    }
+
+    private void restartTimer() {
+        paintingTimer.cancel();
+        paintingTimer = new Timer();
+        paintingTimer.schedule(new TimerTask() {
+            @Override
+            public void run() {
+                repaint();
+            }
+        }, 0, paintingPeriod);
     }
 
     @Override
     public void paintComponent(Graphics g) {
-        g.setColor(Color.white);
-        g.fillRect(0, 0, g.getClipBounds().width, g.getClipBounds().height);
-        world.paint(g, x0, y0, zoom);
+
+        if (paintFromBeginning) {
+            paintFromBeginning = false;
+            g.setColor(Color.gray);
+            g.fillRect(0, 0, g.getClipBounds().width, g.getClipBounds().height);
+            world.resetStep();
+        }
+        world.paintAdaptiveStepRow(g, x0, y0, zoom);
     }
 
     @Override
@@ -64,10 +95,9 @@ public class GraphicPanel extends JPanel implements MouseListener, MouseMotionLi
             double yWorld = (this.getHeight() - e.getY() - y0) / zoom;
             world.mousePressed(xWorld, yWorld);
         } else if (e.getButton() == 2) {
-            // Mousewheel click, must pan the view
             isPanning = true;
+            repaint();
         }
-        repaint();
     }
 
     @Override
@@ -75,7 +105,6 @@ public class GraphicPanel extends JPanel implements MouseListener, MouseMotionLi
         if (e.getButton() == 1) {
             world.mouseReleased();
         }
-        repaint();
     }
 
     @Override
@@ -96,12 +125,13 @@ public class GraphicPanel extends JPanel implements MouseListener, MouseMotionLi
         if (isPanning) {
             x0 += dx;
             y0 -= dy;
+            paintFromBeginning = true;
+            restartTimer();
         } else {
             double xWorld = (e.getX() - x0) / zoom;
             double yWorld = (this.getHeight() - e.getY() - y0) / zoom;
             world.mouseDragged(xWorld, yWorld);
         }
-        repaint();
     }
 
     @Override
@@ -133,51 +163,35 @@ public class GraphicPanel extends JPanel implements MouseListener, MouseMotionLi
         x0 = zoomFact * (x0 - e.getX()) + e.getX();
         y0 = h - e.getY() - zoomFact * (h - y0 - e.getY());
         zoom = zoom * zoomFact;
-        repaint();
+        paintFromBeginning = true;
+        restartTimer();
     }
 
-    /**
-     * Toggle between play and pause
-     *
-     * @return true if the sim is now playing (i.e. it was started), false
-     * otherwise
-     */
-    boolean playPause() {
-        if (timer == null) {
-            play();
-            return true;
-        } else {
-            pause();
-            return false;
+    @Override
+    public void componentResized(ComponentEvent e) {
+        paintFromBeginning = true;
+        restartTimer();
+    }
+
+    @Override
+    public void componentMoved(ComponentEvent e) {
+    }
+
+    @Override
+    public void componentShown(ComponentEvent e) {
+        paintFromBeginning = true;
+        restartTimer();
+    }
+
+    @Override
+    public void componentHidden(ComponentEvent e) {
+    }
+
+    void increaseNbLevels(int increase) {
+        if (nbLevels + increase >= 0) {
+            nbLevels += increase;
+            repaint();
         }
-    }
-
-    private void play() {
-        // Start the simulation
-        timer = new Timer();
-        timer.schedule(new TimerTask() {
-            @Override
-            public void run() {
-                world.step();
-                repaint();
-            }
-        }, delay, period);
-        System.out.println("Timer started");
-    }
-
-    private void pause() {
-        if (timer != null) {
-            timer.cancel();
-            timer = null;
-        }
-        System.out.println("Timer stopped");
-    }
-
-    void restart() {
-
-        pause();
-        world.restart();
-        repaint();
     }
 
 }
