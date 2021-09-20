@@ -136,6 +136,50 @@ class World {
         // then we have already drawn everything with the highest possible resolution.
     }
 
+    /**
+     * Paint the Mandelbrot set with increasing resolution, using square chunks.
+     *
+     * @param g
+     * @param x0
+     * @param y0
+     * @param zoom
+     */
+    public void paintAdaptiveStepSquares(Graphics g, double x0, double y0, double zoom) {
+
+        int height = g.getClipBounds().height;
+        int width = g.getClipBounds().width;
+
+        if (chunkHeight < 0) {
+            chunkHeight = height / 20;
+        }
+
+        if (chunkHeight >= 1) {
+
+            int nbLines = height / chunkHeight;
+            int nbCols = width / chunkHeight;
+
+            for (int line = 0; line < nbLines; line++) {
+
+                for (int col = 0; col < nbCols; col++) {
+
+                    int xAppCenter = (int) ((0.5 + col) * chunkHeight);
+                    double xReal = (xAppCenter - x0) / zoom;
+
+                    int yAppCenter = (int) ((0.5 + line) * chunkHeight);
+                    double yReal = (height - yAppCenter - y0) / zoom;
+
+                    g.setColor(getColor(xReal, yReal));
+                    int xAppCorner = col * chunkHeight;
+                    int yAppCorner = line * chunkHeight;
+                    g.fillRect(xAppCorner, yAppCorner, chunkHeight, chunkHeight);
+                }
+            }
+            chunkHeight = chunkHeight / 2;
+        }
+        // If size of chunk is lower than one,
+        // then we have already drawn everything with the highest possible resolution.
+    }
+
     private void paintCenter(Graphics g, double x0, double y0, double zoom) {
         g.setColor(Color.black);
         int h = g.getClipBounds().height;

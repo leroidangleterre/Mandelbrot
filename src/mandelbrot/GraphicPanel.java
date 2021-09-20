@@ -80,7 +80,7 @@ public class GraphicPanel extends JPanel implements MouseListener, MouseMotionLi
             g.fillRect(0, 0, g.getClipBounds().width, g.getClipBounds().height);
             world.resetStep();
         }
-        world.paintAdaptiveStepRow(g, x0, y0, zoom);
+        world.paintAdaptiveStepSquares(g, x0, y0, zoom);
     }
 
     @Override
