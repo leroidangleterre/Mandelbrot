@@ -22,6 +22,8 @@ class World {
     private int chunkResolution;
     private int chunkHeight; // 0 if not set, or the actual nb of pixel lines of one chunk;
 
+    private int lastLine;
+
     private ColorRamp ramp;
     int maxSteps;
 
@@ -38,6 +40,8 @@ class World {
         ramp.addValue(1300, Color.red);
         ramp.addValue(1900, Color.black);
         maxSteps = 1900;
+
+        lastLine = 0;
     }
 
     public void paint(Graphics g, double x0, double y0, double zoom) {
@@ -180,6 +184,59 @@ class World {
         // then we have already drawn everything with the highest possible resolution.
     }
 
+    public void paintWithTimeLimit(Graphics g, double x0, double y0, double zoom) {
+        long startDate = System.currentTimeMillis();
+        long maxDrawingDuration = 300;
+
+        int height = g.getClipBounds().height;
+        int width = g.getClipBounds().width;
+
+        if (chunkHeight < 0) {
+            chunkHeight = height / 20;
+        }
+
+        if (chunkHeight >= 1) {
+
+            int nbLines = height / chunkHeight;
+            int nbCols = width / chunkHeight;
+
+            int line = lastLine;
+            boolean keepPainting = true;
+            while (keepPainting) {
+
+                for (int col = 0; col <= nbCols; col++) {
+                    int xAppCenter = (int) ((0.5 + col) * chunkHeight);
+                    double xReal = (xAppCenter - x0) / zoom;
+
+                    int yAppCenter = (int) ((0.5 + line) * chunkHeight);
+                    double yReal = (height - yAppCenter - y0) / zoom;
+
+                    g.setColor(getColor(xReal, yReal));
+                    int xAppCorner = col * chunkHeight;
+                    int yAppCorner = line * chunkHeight;
+                    g.fillRect(xAppCorner, yAppCorner, chunkHeight, chunkHeight);
+                }
+
+                if (System.currentTimeMillis() > startDate + maxDrawingDuration) {
+                    keepPainting = false;
+                    // Next time, start where we left off with the same resolution.
+                    lastLine = line;
+                }
+
+                if (line >= nbLines) {
+                    keepPainting = false;
+                    // Next time, restart from scratch with a better resolution.
+                    lastLine = 0;
+                    chunkHeight = chunkHeight / 2;
+                }
+
+                line++;
+            }
+        }
+        // If size of chunk is lower than one,
+        // then we have already drawn everything with the highest possible resolution.
+    }
+
     private void paintCenter(Graphics g, double x0, double y0, double zoom) {
         g.setColor(Color.black);
         int h = g.getClipBounds().height;
@@ -247,8 +304,15 @@ class World {
 
         int i = 0;
         while (i < maxSteps && xCurrent * xCurrent + yCurrent * yCurrent < max * max) {
+
+//            The Mandelbrot set:
             xNext = xCurrent * xCurrent - yCurrent * yCurrent + x;
             yNext = 2 * xCurrent * yCurrent + y;
+//            // The Heart
+//            xNext = xCurrent * xCurrent - yCurrent * yCurrent + x;
+//            xNext = xNext * xNext;
+//            yNext = 2 * xCurrent * yCurrent + y;
+//
             xCurrent = xNext;
             yCurrent = yNext;
             i++;

@@ -76,11 +76,11 @@ public class GraphicPanel extends JPanel implements MouseListener, MouseMotionLi
 
         if (paintFromBeginning) {
             paintFromBeginning = false;
-            g.setColor(Color.gray);
+            g.setColor(Color.black);
             g.fillRect(0, 0, g.getClipBounds().width, g.getClipBounds().height);
             world.resetStep();
         }
-        world.paintAdaptiveStepSquares(g, x0, y0, zoom);
+        world.paintWithTimeLimit(g, x0, y0, zoom);
     }
 
     @Override
