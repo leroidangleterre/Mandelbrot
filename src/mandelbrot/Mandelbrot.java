@@ -17,6 +17,7 @@ public class Mandelbrot {
         JFrame window = new JFrame();
         World world = new World();
         GraphicPanel panel = new GraphicPanel(world);
+        panel.setWindow(window);
         window.setPreferredSize(new Dimension(width, height));
         window.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 

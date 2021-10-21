@@ -11,6 +11,7 @@ import java.awt.event.MouseWheelEvent;
 import java.awt.event.MouseWheelListener;
 import java.util.Timer;
 import java.util.TimerTask;
+import javax.swing.JFrame;
 import javax.swing.JPanel;
 
 /**
@@ -33,6 +34,7 @@ public class GraphicPanel extends JPanel implements MouseListener, MouseMotionLi
 
     // When painting in square regions, this is how many layers deep we go.
     private int nbLevels;
+    private JFrame window;
 
     public GraphicPanel(World newWorld) {
         super();
@@ -81,6 +83,7 @@ public class GraphicPanel extends JPanel implements MouseListener, MouseMotionLi
             world.resetStep();
         }
         world.paintWithTimeLimit(g, x0, y0, zoom);
+        setWindowTitle(g.getClipBounds().width, g.getClipBounds().height);
     }
 
     @Override
@@ -192,6 +195,19 @@ public class GraphicPanel extends JPanel implements MouseListener, MouseMotionLi
             nbLevels += increase;
             repaint();
         }
+    }
+
+    void setWindow(JFrame w) {
+        this.window = w;
+    }
+
+    private void setWindowTitle(int currentWidth, int currentHeight) {
+
+        double xCenter = (currentWidth / 2 - x0) / this.zoom;
+        double yCenter = (currentHeight / 2 - y0) / zoom;
+
+        String newTitle = "x: " + xCenter + ", y: " + yCenter + ", zoom: " + zoom;
+        window.setTitle(newTitle);
     }
 
 }

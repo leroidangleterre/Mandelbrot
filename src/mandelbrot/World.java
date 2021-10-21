@@ -306,8 +306,11 @@ class World {
         while (i < maxSteps && xCurrent * xCurrent + yCurrent * yCurrent < max * max) {
 
 //            The Mandelbrot set:
+//            xNext = xCurrent * xCurrent - yCurrent * yCurrent + x;
+//            yNext = 2 * xCurrent * yCurrent + y;
             xNext = xCurrent * xCurrent - yCurrent * yCurrent + x;
             yNext = 2 * xCurrent * yCurrent + y;
+
 //            // The Heart
 //            xNext = xCurrent * xCurrent - yCurrent * yCurrent + x;
 //            xNext = xNext * xNext;
