@@ -320,7 +320,32 @@ class World {
             yCurrent = yNext;
             i++;
         }
-        return ramp.getValue(i);
+        return Color.black;
+    }
+
+    void paintRecursionPath(double xInit, double yInit, Graphics g,
+            double x0, double y0, double zoom) {
+
+        double xPrev = 0;
+        double yPrev = 0;
+
+        for (int step = 0; step < maxSteps; step++) {
+            // Compute coordinates after one step
+            double xCurrent = xPrev * xPrev - yPrev * yPrev + xInit;
+            double yCurrent = 2 * xPrev * yPrev + yInit;
+
+            // Draw the line
+            int xAppPrev = (int) (xPrev * zoom + x0);
+            int yAppPrev = (int) (g.getClipBounds().height - (yPrev * zoom + x0));
+            int xCurrentPrev = (int) (xCurrent * zoom + x0);
+            int yCurrentPrev = (int) (g.getClipBounds().height - (yCurrent * zoom + x0));
+            g.setColor(Color.black);
+            g.drawLine(xAppPrev, yAppPrev, xCurrentPrev, yCurrentPrev);
+
+            // Prepare next step
+            xPrev = xCurrent;
+            yPrev = yCurrent;
+        }
     }
 
 }
