@@ -13,6 +13,10 @@ class World {
 
     int currentStep;
 
+    enum DrawingType {
+        HYPERBOLIC, MANDELBROT, HEART
+    }
+
     /**
      * First pass, resolution is set to its default value, so only a few lines
      * are displayed.
@@ -294,31 +298,82 @@ class World {
      */
     private Color getColor(double x, double y) {
 
-        // Limit of convergence; if value goes higher, we consider it does not converge
-        double max = 10000000;
+        DrawingType type = DrawingType.MANDELBROT;
 
-        double xCurrent = 0;
-        double yCurrent = 0;
-        double xNext;
-        double yNext;
+        switch (type) {
+        case HYPERBOLIC:
+            // Hyperbolic space:
+            // First, not hyperbolic
+            double xCurrent = x,
+             yCurrent = y;
 
-        int i = 0;
-        while (i < maxSteps && xCurrent * xCurrent + yCurrent * yCurrent < max * max) {
+            // Second, hyperbolic space
+            // Map the norm of points from [0, 1[ to [0, infinity[
+            double norm = Math.sqrt(x * x + y * y);
+            if (norm > 1) {
+                return Color.gray;
+            }
+            double proportionFactor = 5 / (norm - 1);
+            xCurrent *= proportionFactor;
+            yCurrent *= proportionFactor;
 
-//            The Mandelbrot set:
-//            xNext = xCurrent * xCurrent - yCurrent * yCurrent + x;
-//            yNext = 2 * xCurrent * yCurrent + y;
-            xNext = xCurrent * xCurrent - yCurrent * yCurrent + x;
-            yNext = 2 * xCurrent * yCurrent + y;
+            boolean xIsEven,
+             yIsEven;
+            if (xCurrent < 0) {
+                xCurrent--;
+            }
+            if (yCurrent
+                    < 0) {
+                yCurrent--;
+            }
+            xIsEven = ((((int) xCurrent) / 2) * 2 == (int) xCurrent);
+            yIsEven = ((((int) yCurrent) / 2) * 2 == (int) yCurrent);
 
-//            // The Heart
-//            xNext = xCurrent * xCurrent - yCurrent * yCurrent + x;
-//            xNext = xNext * xNext;
-//            yNext = 2 * xCurrent * yCurrent + y;
-//
-            xCurrent = xNext;
-            yCurrent = yNext;
-            i++;
+            if (xIsEven && yIsEven || (!xIsEven) && (!yIsEven)) {
+                return Color.red;
+            } else {
+                return Color.blue;
+            }
+        case MANDELBROT:
+            // Mandelbrot:
+            // Limit of convergence; if value goes higher, we consider it does not converge
+            double max = 10000000;
+
+            xCurrent = 0;
+            yCurrent = 0;
+            double xNext;
+            double yNext;
+            int i = 0;
+            while (i < maxSteps && xCurrent * xCurrent + yCurrent * yCurrent < max * max) {
+
+                xNext = xCurrent * xCurrent - yCurrent * yCurrent + x;
+                yNext = 2 * xCurrent * yCurrent + y;
+
+                xCurrent = xNext;
+                yCurrent = yNext;
+                i++;
+            }
+            return ramp.getValue(i);
+        case HEART:
+            // Mandelbrot:
+            // Limit of convergence; if value goes higher, we consider it does not converge
+            max = 10000000;
+
+            xCurrent = 0;
+            yCurrent = 0;
+            i = 0;
+            while (i < maxSteps && xCurrent * xCurrent + yCurrent * yCurrent < max * max) {
+
+                // The Heart
+                xNext = xCurrent * xCurrent - yCurrent * yCurrent + x;
+                xNext = xNext * xNext;
+                yNext = 2 * xCurrent * yCurrent + y;
+
+                xCurrent = xNext;
+                yCurrent = yNext;
+                i++;
+            }
+            return ramp.getValue(i);
         }
         return Color.black;
     }
