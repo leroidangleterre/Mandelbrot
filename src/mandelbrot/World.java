@@ -12,9 +12,18 @@ import colorramp.ColorRamp;
 class World {
 
     int currentStep;
+    private DrawingType currentDrawingType = DrawingType.MANDELBROT;
+
+    DrawingType getType() {
+        return currentDrawingType;
+    }
 
     enum DrawingType {
-        HYPERBOLIC, MANDELBROT, HEART
+        FLAT,
+        HYPERBOLIC,
+        MANDELBROT,
+        TETRATION,
+        HEART
     }
 
     /**
@@ -35,15 +44,20 @@ class World {
         currentStep = 0;
 
         ramp = new ColorRamp();
+
+        Color gold = new Color(252, 194, 1);
+
+        ramp.addValue(10, Color.white);
         ramp.addValue(20, Color.blue.darker());
-        ramp.addValue(30, Color.white);
-        ramp.addValue(50, Color.yellow);
-        ramp.addValue(200, Color.red);
-        ramp.addValue(400, Color.blue);
-        ramp.addValue(800, Color.white);
-        ramp.addValue(1300, Color.red);
-        ramp.addValue(1900, Color.black);
-        maxSteps = 1900;
+        ramp.addValue(50, Color.red.darker());
+        ramp.addValue(100, gold);
+        ramp.addValue(300, new Color(128, 128, 128));
+        ramp.addValue(2000, gold);
+        ramp.addValue(3000, Color.blue);
+        ramp.addValue(3700, Color.red);
+        ramp.addValue(4000, Color.black);
+
+        maxSteps = 4000;
 
         lastLine = 0;
     }
@@ -162,6 +176,7 @@ class World {
         }
 
         if (chunkHeight >= 1) {
+            System.out.println("Chunk size: " + chunkHeight);
 
             int nbLines = height / chunkHeight;
             int nbCols = width / chunkHeight;
@@ -215,7 +230,9 @@ class World {
                     int yAppCenter = (int) ((0.5 + line) * chunkHeight);
                     double yReal = (height - yAppCenter - y0) / zoom;
 
-                    g.setColor(getColor(xReal, yReal));
+                    Color c = getColor(xReal, yReal);
+//                    System.out.println("(" + xReal + ", " + yReal + "): " + c);
+                    g.setColor(c);
                     int xAppCorner = col * chunkHeight;
                     int yAppCorner = line * chunkHeight;
                     g.fillRect(xAppCorner, yAppCorner, chunkHeight, chunkHeight);
@@ -239,6 +256,7 @@ class World {
         }
         // If size of chunk is lower than one,
         // then we have already drawn everything with the highest possible resolution.
+        paintCenter(g, x0, y0, zoom);
     }
 
     private void paintCenter(Graphics g, double x0, double y0, double zoom) {
@@ -272,7 +290,7 @@ class World {
      * @param zoom
      */
     private void paintDots(Graphics g, double x0, double y0, double zoom) {
-
+        System.out.println("paintDots");
         // Choose the coordinates
         int w = g.getClipBounds().width;
         int h = g.getClipBounds().height;
@@ -296,11 +314,25 @@ class World {
      * @param y
      * @return a color that depends on the convergence of the suite.
      */
-    private Color getColor(double x, double y) {
+    public Color getColor(double x, double y) {
+//        System.out.println("getColor");
+        boolean xIsEven;
+        boolean yIsEven;
+        int max;
+        double xNext, yNext;
+        int step;
 
-        DrawingType type = DrawingType.MANDELBROT;
+        switch (currentDrawingType) {
+        case FLAT:
+            int xConv = (int) Math.floor(x);
+            int yConv = (int) Math.floor(y);
 
-        switch (type) {
+            if (xConv % 2 == 0 ^ yConv % 2 == 0) {
+                return Color.red;
+            } else {
+                return Color.blue;
+            }
+
         case HYPERBOLIC:
             // Hyperbolic space:
             // First, not hyperbolic
@@ -317,8 +349,6 @@ class World {
             xCurrent *= proportionFactor;
             yCurrent *= proportionFactor;
 
-            boolean xIsEven,
-             yIsEven;
             if (xCurrent < 0) {
                 xCurrent--;
             }
@@ -336,24 +366,55 @@ class World {
             }
         case MANDELBROT:
             // Mandelbrot:
-            // Limit of convergence; if value goes higher, we consider it does not converge
-            double max = 10000000;
+
+            max = 4000;
+
+            double xC = x;
+            double yC = y;
 
             xCurrent = 0;
             yCurrent = 0;
-            double xNext;
-            double yNext;
-            int i = 0;
-            while (i < maxSteps && xCurrent * xCurrent + yCurrent * yCurrent < max * max) {
 
-                xNext = xCurrent * xCurrent - yCurrent * yCurrent + x;
-                yNext = 2 * xCurrent * yCurrent + y;
+            step = 0;
+            norm = 0;
+            while (step < max && norm < 100) {
+                xNext = xCurrent * xCurrent - yCurrent * yCurrent + xC;
+                yNext = 2 * xCurrent * yCurrent + yC;
+                xCurrent = xNext;
+                yCurrent = yNext;
+                norm = Math.abs(xCurrent + yCurrent);
+                step++;
+            }
+            return ramp.getValue(step);
+
+        case TETRATION:
+            // Mandelbrot:
+            // Limit of convergence; if value goes higher, we consider it does not converge
+            max = 1000;
+
+            xCurrent = 0;
+            yCurrent = 0;
+            step = 0;
+
+            maxSteps = 16;
+
+            while (step < maxSteps && xCurrent * xCurrent + yCurrent * yCurrent < max * max) {
+
+                double x2 = xCurrent * xCurrent;
+                double x3 = x2 * xCurrent;
+                double y2 = yCurrent * yCurrent;
+                double y3 = y2 * yCurrent;
+                double xy = xCurrent * yCurrent;
+
+                double c = Math.sqrt(2);
+                xNext = Math.pow(c, xCurrent) * Math.cos(yCurrent * Math.log(c));
+                yNext = Math.pow(c, xCurrent) * Math.sin(yCurrent * Math.log(c));
 
                 xCurrent = xNext;
                 yCurrent = yNext;
-                i++;
+                step++;
             }
-            return ramp.getValue(i);
+            return ramp.getValue(step);
         case HEART:
             // Mandelbrot:
             // Limit of convergence; if value goes higher, we consider it does not converge
@@ -361,8 +422,8 @@ class World {
 
             xCurrent = 0;
             yCurrent = 0;
-            i = 0;
-            while (i < maxSteps && xCurrent * xCurrent + yCurrent * yCurrent < max * max) {
+            step = 0;
+            while (step < maxSteps && xCurrent * xCurrent + yCurrent * yCurrent < max * max) {
 
                 // The Heart
                 xNext = xCurrent * xCurrent - yCurrent * yCurrent + x;
@@ -371,9 +432,9 @@ class World {
 
                 xCurrent = xNext;
                 yCurrent = yNext;
-                i++;
+                step++;
             }
-            return ramp.getValue(i);
+            return ramp.getValue(step);
         }
         return Color.black;
     }
