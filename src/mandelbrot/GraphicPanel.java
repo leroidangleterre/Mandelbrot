@@ -24,6 +24,7 @@ public class GraphicPanel extends JPanel implements MouseListener, MouseMotionLi
 
     private double x0, y0, zoom;
     private int xMouse, yMouse;
+    private double xWorld, yWorld;
 
     private boolean isPanning;
 
@@ -32,6 +33,8 @@ public class GraphicPanel extends JPanel implements MouseListener, MouseMotionLi
     private boolean paintFromBeginning;
     private Timer paintingTimer;
 
+    // The list of regions must be kept sorted: list must start with regions with lowest LOD
+//    private ArrayList<PaintingRegion> regionList;
     // When painting in square regions, this is how many layers deep we go.
     private int nbLevels;
     private JFrame window;
@@ -39,9 +42,15 @@ public class GraphicPanel extends JPanel implements MouseListener, MouseMotionLi
     public GraphicPanel(World newWorld) {
         super();
         world = newWorld;
-        x0 = 501;
-        y0 = 444;
-        zoom = 27.00;
+        if (newWorld.getType() == World.DrawingType.MANDELBROT) {
+            x0 = 684;
+            y0 = 453;
+            zoom = 304.48;
+        } else {
+            x0 = 0.0;
+            y0 = 0.0;
+            zoom = 1.0;
+        }
         this.addMouseListener(this);
         this.addMouseMotionListener(this);
         this.addMouseWheelListener(this);
@@ -58,6 +67,8 @@ public class GraphicPanel extends JPanel implements MouseListener, MouseMotionLi
         paintingTimer = new Timer();
         restartTimer();
 
+//        regionList = new ArrayList<>();
+//        regionList.add(new PaintingRegion(zoom));
         paintFromBeginning = true;
         world.resetStep();
     }
@@ -76,14 +87,40 @@ public class GraphicPanel extends JPanel implements MouseListener, MouseMotionLi
     @Override
     public void paintComponent(Graphics g) {
 
-        if (paintFromBeginning) {
-            paintFromBeginning = false;
-            g.setColor(Color.black);
-            g.fillRect(0, 0, g.getClipBounds().width, g.getClipBounds().height);
-            world.resetStep();
+        boolean keepOldMethod = true;
+        if (keepOldMethod) {
+            if (paintFromBeginning) {
+                paintFromBeginning = false;
+                g.setColor(Color.black);
+                g.fillRect(0, 0, g.getClipBounds().width, g.getClipBounds().height);
+                world.resetStep();
+            }
+            world.paintWithTimeLimit(g, x0, y0, zoom);
+            setWindowTitle(g.getClipBounds().width, g.getClipBounds().height);
+//            world.paintRecursionPath(xWorld, yWorld, g, x0, y0, zoom);
+        } else {
+//            if (regionList.isEmpty()) {
+//                // Create first region
+//                regionList.add(new PaintingRegion(0, 0, g.getClipBounds().width, g.getClipBounds().height));
+//            }
+//
+//            boolean keepPainting = true;
+//            long startDate = System.currentTimeMillis();
+//            long maxDrawingDuration = 300;
+//
+//            while (keepPainting) {
+//
+//                // Select region with the current lowest LOD
+//                PaintingRegion lowestLODRegion = regionList.get(0);
+//                // Paint a chunk of it
+////                if (!lowestLODRegion.isDone()) {
+//                lowestLODRegion.paint(g, world, x0, y0, zoom);
+////                }
+//                if (System.currentTimeMillis() > startDate + maxDrawingDuration) {
+//                    keepPainting = false;
+//                }
+//            }
         }
-        world.paintWithTimeLimit(g, x0, y0, zoom);
-        setWindowTitle(g.getClipBounds().width, g.getClipBounds().height);
     }
 
     @Override
@@ -94,8 +131,8 @@ public class GraphicPanel extends JPanel implements MouseListener, MouseMotionLi
     public void mousePressed(MouseEvent e) {
         if (e.getButton() == 1) {
             isPanning = false;
-            double xWorld = (e.getX() - x0) / zoom;
-            double yWorld = (this.getHeight() - e.getY() - y0) / zoom;
+            xWorld = (e.getX() - x0) / zoom;
+            yWorld = (this.getHeight() - e.getY() - y0) / zoom;
             world.mousePressed(xWorld, yWorld);
         } else if (e.getButton() == 2) {
             isPanning = true;
@@ -118,6 +155,12 @@ public class GraphicPanel extends JPanel implements MouseListener, MouseMotionLi
     public void mouseExited(MouseEvent e) {
     }
 
+    /**
+     * Shift the current PaintRegions, clip those that go outside the frame, and
+     * create new ones on the other side.
+     *
+     * @param e
+     */
     @Override
     public void mouseDragged(MouseEvent e) {
         int dx = e.getX() - xMouse;
@@ -129,6 +172,7 @@ public class GraphicPanel extends JPanel implements MouseListener, MouseMotionLi
             x0 += dx;
             y0 -= dy;
             paintFromBeginning = true;
+            recomputeRegions(dx, dy);
             restartTimer();
         } else {
             double xWorld = (e.getX() - x0) / zoom;
@@ -141,6 +185,8 @@ public class GraphicPanel extends JPanel implements MouseListener, MouseMotionLi
     public void mouseMoved(MouseEvent e) {
         xMouse = e.getX();
         yMouse = e.getY();
+        xWorld = (e.getX() - x0) / zoom;
+        yWorld = (this.getHeight() - e.getY() - y0) / zoom;
     }
 
     @Override
@@ -166,8 +212,10 @@ public class GraphicPanel extends JPanel implements MouseListener, MouseMotionLi
         x0 = zoomFact * (x0 - e.getX()) + e.getX();
         y0 = h - e.getY() - zoomFact * (h - y0 - e.getY());
         zoom = zoom * zoomFact;
+        resetRegions();
         paintFromBeginning = true;
         restartTimer();
+//        System.out.println("x0 = " + x0 + ", y0 = " + y0 + ", zoom = " + zoom);
     }
 
     @Override
@@ -208,6 +256,14 @@ public class GraphicPanel extends JPanel implements MouseListener, MouseMotionLi
 
         String newTitle = "x: " + xCenter + ", y: " + yCenter + ", zoom: " + zoom;
         window.setTitle(newTitle);
+    }
+
+    private void recomputeRegions(int dx, int dy) {
+        // TODO
+    }
+
+    private void resetRegions() {
+//        regionList.clear();
     }
 
 }
