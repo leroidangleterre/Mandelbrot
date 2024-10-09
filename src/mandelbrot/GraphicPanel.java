@@ -86,6 +86,7 @@ public class GraphicPanel extends JPanel implements MouseListener, MouseMotionLi
 
     @Override
     public void paintComponent(Graphics g) {
+        System.out.println("paint x0: " + x0 + ", y0: " + y0 + ", zoom: " + zoom);
 
         boolean keepOldMethod = true;
         if (keepOldMethod) {
@@ -175,8 +176,8 @@ public class GraphicPanel extends JPanel implements MouseListener, MouseMotionLi
             recomputeRegions(dx, dy);
             restartTimer();
         } else {
-            double xWorld = (e.getX() - x0) / zoom;
-            double yWorld = (this.getHeight() - e.getY() - y0) / zoom;
+            xWorld = (e.getX() - x0) / zoom;
+            yWorld = (this.getHeight() - e.getY() - y0) / zoom;
             world.mouseDragged(xWorld, yWorld);
         }
     }
